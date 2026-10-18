@@ -1,0 +1,31 @@
+تم فحص الربط بين الفرونت والباك:
+
+1) الفرونت يستخدم:
+VITE_API_BASE_URL=http://localhost:5000/api
+
+2) الباك يستخدم نفس المسارات:
+/api/auth
+/api/evidence
+/api/cases
+/api/timeline
+/api/dashboard
+/api/reports
+/api/analysis
+/api/users
+
+3) تمت إضافة صفحة هل نسيت كلمة المرور:
+/frontend/src/pages/ForgotPassword.tsx
+والرابط:
+http://localhost:5173/forgot-password
+
+4) تمت إضافة endpoints بالباك:
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+
+5) تم وضع الشعار داخل:
+/frontend/src/assets/dec-logo.png
+وتم استخدامه في Login / Register / Forgot Password / Sidebar
+
+طريقة التشغيل:
+- افتحي backend ثم: npm install وبعدها npm run dev أو npm start
+- افتحي frontend ثم: npm install وبعدها npm run dev

@@ -1,0 +1,1 @@
+Closed case sample. Hash retained for report tests.

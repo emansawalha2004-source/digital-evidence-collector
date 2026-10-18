@@ -1,0 +1,14 @@
+# Python / Flask (إذا كان مبني بـ Python)
+__pycache__/
+*.pyc
+venv/
+env/
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# OS Files
+.DS_Store
+Thumbs.db

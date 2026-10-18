@@ -1,0 +1,3 @@
+Return-Path: spoofed-supplier@example.top
+Reply-To: payments-verify@example.xyz
+SPF: softfail

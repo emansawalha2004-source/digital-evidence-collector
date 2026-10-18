@@ -1,0 +1,2 @@
+Recovery fee address: 0xFakedRecovery000000000000
+Victim note: paid after agent pressure.

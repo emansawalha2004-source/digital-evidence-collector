@@ -1,0 +1,3 @@
+Original attachment name: invoice-review.exe
+Quarantined by endpoint agent.
+Static review required.
