@@ -55,7 +55,6 @@ async function enforceOtpRecipientLimit(user, req, purpose) {
   user.loginOtpSendCount = count + 1;
 }
 
-
 function generateLoginOtp() {
   return String(crypto.randomInt(100000, 1000000));
 }
@@ -161,14 +160,19 @@ const register = asyncHandler(async (req, res) => {
   const normalizedEmail = String(email).trim().toLowerCase();
   if (await User.findOne({ email: normalizedEmail })) throw AppError.conflict('Email is already registered');
 
-  const user = await User.create({ fullName, email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), role: 'investigator', isActive: true });
-  await audit(req, 'register', user, `User registered: ${user.email}`);
-  const devOtp = await createLoginOtpChallenge(user, req, 'otp', 'register');
+  // تم التعديل: تعيين الحساب كغير مفعل (isActive: false) حتى يوافق عليه المشرف
+  const user = await User.create({ 
+    fullName, 
+    email: normalizedEmail, 
+    passwordHash: await bcrypt.hash(password, 12), 
+    role: 'investigator', 
+    isActive: false 
+  });
+  
+  await audit(req, 'register', user, `User registered pending approval: ${user.email}`);
+  
   return sendResponse(res, 201, {
-    mfaRequired: true,
-    mfaToken: signMfaToken(user),
-    challengeType: 'otp',
-    ...(devOtp ? { devOtp } : {}),
+    message: 'Registration successful. Your account is pending administrator approval.',
   });
 });
 
@@ -179,25 +183,17 @@ const login = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: String(email).trim().toLowerCase() }).select('+passwordHash +mfaSecret +mfaBackupCodes +loginOtpHash +loginOtpExpiresAt');
   if (!user) throw invalidLoginError();
   if (user.lockedUntil && user.lockedUntil > new Date()) throw AppError.tooManyRequests ? AppError.tooManyRequests('Account is temporarily locked. Try again later.') : AppError.forbidden('Account is temporarily locked. Try again later.');
-  if (!user.isActive) throw AppError.unauthorized('This account is inactive');
+  if (!user.isActive) throw AppError.unauthorized('This account is inactive or pending approval');
 
   const matches = await bcrypt.compare(password, user.passwordHash);
   if (!matches) { await registerFailure(user, req); throw invalidLoginError(); }
 
   await resetLoginFailures(user);
 
-  if (user.role === 'admin') {
-    user.lastLoginAt = new Date();
-    user.loginOtpHash = null;
-    user.loginOtpExpiresAt = null;
-    user.loginOtpAttempts = 0;
-    await user.save();
-    await audit(req, 'login', user, `Admin login without OTP: ${user.email}`, { otpBypassed: true, role: user.role });
-    return sendResponse(res, 200, { user: sanitizeUser(user), token: signToken(user) });
-  }
-
+  // تم إزالة شرط تجاوز الـ Admin لضمان إلزام المسؤولين بالتحقق الثنائي (MFA / OTP)
   const challengeType = user.mfaEnabled ? 'totp' : 'otp';
   const devOtp = user.mfaEnabled ? null : await createLoginOtpChallenge(user, req, challengeType, 'login');
+  
   return sendResponse(res, 200, {
     mfaRequired: true,
     mfaToken: signMfaToken(user),
@@ -244,13 +240,11 @@ const changePassword = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, { message: 'Password changed successfully' });
 });
 
-
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) throw AppError.badRequest('Email is required');
 
   const user = await User.findOne({ email: String(email).trim().toLowerCase() });
-  // Always return a neutral message so attackers cannot discover registered emails.
   if (!user || !user.isActive) {
     return sendResponse(res, 200, { message: 'If this email exists, a reset code has been sent.' });
   }
