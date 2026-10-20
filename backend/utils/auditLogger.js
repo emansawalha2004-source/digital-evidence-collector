@@ -1,12 +1,9 @@
 const AuditLog = require('../models/AuditLog');
 
 function getRequestIp(req) {
-  return (
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req.socket?.remoteAddress ||
-    req.ip ||
-    ''
-  );
+  if (!req) return '';
+  // الاعتماد على req.ip الذي يحترم إعدادات express 'trust proxy' بشكل آمن ومحمي من التلاعب
+  return req.ip || req.socket?.remoteAddress || '';
 }
 
 async function createAuditLog({
@@ -25,7 +22,7 @@ async function createAuditLog({
     caseId,
     evidenceId,
     metadata,
-    ip: req ? getRequestIp(req) : '',
+    ip: getRequestIp(req),
     userAgent: req ? req.get('user-agent') || '' : '',
   });
 }
