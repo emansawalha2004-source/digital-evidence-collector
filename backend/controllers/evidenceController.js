@@ -290,15 +290,11 @@ const getEvidenceStats = asyncHandler(async (req, res) => {
     Evidence.countDocuments(mergeFilters(accessFilter, { status: 'deleted' })),
     Evidence.aggregate([
       { $match: accessFilter },
-      { $group: { _id: '$evidenceType', count: { $sum: 1 } } },
-      { $project: { _id: 0, type: '$_id', count: 1 } },
-      { $sort: { type: 1 } },
+      { $group: { _id: '$evidenceType', count: { $sum: 1 } } }, {$project: { _id: 0, type: '$_id', count: 1 } }, {$sort: { type: 1 } },
     ]),
     Evidence.aggregate([
       { $match: accessFilter },
-      { $group: { _id: '$priority', count: { $sum: 1 } } },
-      { $project: { _id: 0, priority: '$_id', count: 1 } },
-      { $sort: { priority: 1 } },
+      { $group: { _id: '$priority', count: { $sum: 1 } } }, {$project: { _id: 0, priority: '$_id', count: 1 } }, {$sort: { priority: 1 } },
     ]),
   ]);
 
@@ -523,6 +519,20 @@ const downloadEvidence = asyncHandler(async (req, res) => {
 
   if (!fs.existsSync(absolutePath)) {
     throw AppError.notFound('Stored file not found');
+  }
+
+  // تحقق جنائي إضافي: إعادة احتساب الهاش والتأكد من مطابقة الملف الفعلي للسلامة الرقمية
+  const currentSha256 = await calculateSha256(absolutePath);
+  if (currentSha256 !== evidence.file.sha256) {
+    await createAuditLog({
+      req,
+      action: 'integrity_violation_detected',
+      message: `Integrity violation detected during download for evidence: ${evidence.title}`,
+      caseId: evidence.caseId,
+      evidenceId: evidence._id,
+      metadata: { storedSha256: evidence.file.sha256, currentSha256 },
+    });
+    throw AppError.badRequest('Forensic integrity violation: File hash mismatch detected on disk!');
   }
 
   await createAuditLog({
