@@ -64,6 +64,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
+// نقطة التفتيش الصحية للنظام (Health Check)
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -73,6 +74,16 @@ app.get('/api/health', (req, res) => {
       environment: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString(),
     },
+  });
+});
+
+// مسار ترحيبي جذري لمنع ظهور خطأ Route not found عند فتح /api مباشرة
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to EvidenceSystem API (Academic Prototype)',
+    version: '1.0.0',
+    documentation: '/api/health',
   });
 });
 
