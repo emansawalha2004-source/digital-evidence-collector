@@ -28,8 +28,19 @@ async function protect(req, res, next) {
     if (decoded.purpose && decoded.purpose !== 'access') throw AppError.unauthorized('MFA token cannot access protected APIs');
     const userId = decoded.userId || decoded.id || decoded._id;
     if (!userId) throw AppError.unauthorized('Invalid token payload');
-    const user = await User.findById(userId);
+    
+    // جلب المستخدم مع حقل passwordChangedAt للتحقق من إبطال الجلسة
+    const user = await User.findById(userId).select('+passwordChangedAt');
     if (!user || !user.isActive) throw AppError.unauthorized('User is not active or does not exist');
+
+    // تحقق أمني: هل تم تغيير كلمة المرور بعد إصدار هذا الرمز؟
+    if (user.passwordChangedAt) {
+      const changedTimestamp = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
+      if (decoded.iat && decoded.iat < changedTimestamp) {
+        throw AppError.unauthorized('User recently changed password! Please log in again.');
+      }
+    }
+
     req.user = user;
     return next();
   } catch (error) {
