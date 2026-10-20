@@ -68,6 +68,12 @@ async function addAnalysis({ evidence, requestedBy, riskScore, riskLevel, indica
 }
 
 async function run() {
+  // حماية صارمة: منع تشغيل الـ Seed نهائياً في بيئة الإنتاج لمنع مسح بيانات النظام
+  if (process.env.NODE_ENV === 'production') {
+    console.error('CRITICAL ERROR: Cannot run seed script in production environment!');
+    process.exit(1);
+  }
+
   await mongoose.connect(MONGO_URI);
   console.log('MongoDB connected');
 
