@@ -11,7 +11,8 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "npm run build --prefix frontend",
     "start:backend": "npm start --prefix backend",
-    "start": "npm run build:frontend && npm run start:backend"
+    "start": "npm run build:frontend && npm run start:backend",
+    "test": "npm test --prefix backend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
