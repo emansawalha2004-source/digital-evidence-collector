@@ -22,6 +22,9 @@ dotenv.config();
 
 const app = express();
 
+// 👉 التعديل الأمني هنا: الثقة بالبروكسي لضمان تسجيل الـ IP الحقيقي والآمن بدقة
+app.set('trust proxy', true);
+
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000';
