@@ -15,12 +15,13 @@ const { protect, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-// كل Routes القضايا تحتاج مستخدم
+// كل Routes القضايا تحتاج مستخدم مسجل الدخول
 router.use(protect);
 
+// تعديل الصلاحية لتشمل المدير والمحقق معاً لإنشاء القضايا
 router
   .route('/')
-  .post(requireRole('investigator'), createCase)
+  .post(requireRole('admin', 'investigator'), createCase)
   .get(getCases);
 
 router
@@ -30,7 +31,9 @@ router
   .delete(requireRole('admin', 'investigator'), archiveCase);
 
 router.get('/:id/evidence', getCaseEvidence);
-router.get('/:id/timeline', requireRole('admin'), getCaseTimeline);
+
+// تعديل الصلاحية لجدول الزمني للقضية ليسمح للمدير والمحقق معاً
+router.get('/:id/timeline', requireRole('admin', 'investigator'), getCaseTimeline);
 router.get('/:id/stats', getCaseStats);
 
 module.exports = router;
