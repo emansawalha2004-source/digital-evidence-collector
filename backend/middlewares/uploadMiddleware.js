@@ -98,7 +98,7 @@ const ALLOWED_MIME_TYPES = new Set([
   'application/x-rar-compressed',
   'application/vnd.rar',
   'application/x-7z-compressed',
-  'application/octet-stream',
+  // ملاحظة: تم حذف application/octet-stream لمنع رفع ملفات تنفيذية غير آمنة
 ]);
 
 const MIME_TYPE_TO_EVIDENCE_TYPE = [
@@ -157,6 +157,7 @@ function fileFilter(req, file, cb) {
   const extension = path.extname(file.originalname || '').toLowerCase();
   const mimeType = String(file.mimetype || '').toLowerCase();
 
+  // 1. التحقق من امتداد الملف
   if (!ALLOWED_EXTENSIONS.has(extension)) {
     return cb(
       AppError.unsupportedMediaType('File extension is not allowed', {
@@ -166,9 +167,10 @@ function fileFilter(req, file, cb) {
     );
   }
 
+  // 2. التحقق من نوع الـ MIME القادم ومنع octet-stream
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
     return cb(
-      AppError.unsupportedMediaType('File type is not allowed', {
+      AppError.unsupportedMediaType('File type is not allowed or too generic', {
         mimeType,
         allowedMimeTypes: Array.from(ALLOWED_MIME_TYPES).sort(),
       })
